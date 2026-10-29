@@ -1,0 +1,14 @@
+home_region           = "us-east-1"
+allowed_regions       = ["us-east-1", "us-west-2"]
+management_account_id = "111111111111"
+
+account_ids = {
+  log_archive      = "222222222222"
+  security         = "333333333333"
+  network          = "444444444444"
+  sandbox_workload = "555555555555"
+}
+
+log_bucket_name         = "lz-sandbox-log-archive-222222222222"
+security_findings_email = "security-oncall@example.com"
+enable_nat_gateway      = false

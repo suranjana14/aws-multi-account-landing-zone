@@ -1,0 +1,42 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyOutsideApprovedRegions",
+      "Effect": "Deny",
+      "NotAction": [
+        "iam:*",
+        "organizations:*",
+        "sts:*",
+        "support:*",
+        "cloudfront:*",
+        "route53:*",
+        "route53domains:*",
+        "waf:*",
+        "wafv2:*",
+        "shield:*",
+        "budgets:*",
+        "ce:*",
+        "health:*",
+        "kms:*",
+        "sso:*",
+        "identitystore:*",
+        "account:*",
+        "trustedadvisor:*",
+        "globalaccelerator:*",
+        "access-analyzer:*",
+        "s3:GetAccountPublicAccessBlock",
+        "s3:ListAllMyBuckets"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": ${jsonencode(allowed_regions)}
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/LandingZoneAdmin"
+        }
+      }
+    }
+  ]
+}

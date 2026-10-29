@@ -1,0 +1,50 @@
+# Intended GitHub Actions workflow. Copy to .github/workflows/terraform.yml to enable.
+name: landing-zone
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.9.8" }
+      - run: pip install checkov
+      - run: ./ci/validate.sh
+
+  plan:
+    needs: validate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.LZ_PLAN_ROLE_ARN }}   # read-only role in the management account
+          aws-region: us-east-1
+      - run: terraform -chdir=envs/sandbox init && terraform -chdir=envs/sandbox plan -no-color -out=tfplan
+      # post the plan as a PR comment for review
+
+  apply:
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: landing-zone   # required reviewers from the platform + security teams
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.LZ_APPLY_ROLE_ARN }}  # the LandingZoneAdmin role exempted in the SCPs
+          aws-region: us-east-1
+      - run: terraform -chdir=envs/sandbox init && terraform -chdir=envs/sandbox apply -auto-approve
